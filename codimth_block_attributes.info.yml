@@ -1,0 +1,7 @@
+name: Codimth Block Attributes
+type: module
+description: Codimth Block Attributes for ovveride default attributes
+package: Codimth
+core: 8.x
+dependencies:
+  - drupal:block

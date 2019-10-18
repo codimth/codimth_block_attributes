@@ -1,0 +1,102 @@
+<?php
+
+
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\block\Entity\Block;
+use Drupal\Component\Utility\Html;
+
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function codimth_block_attributes_form_block_form_alter(&$form, FormStateInterface $form_state, $form_id)
+{
+
+    $block = $form_state->getFormObject()->getEntity();
+
+    // This will automatically be saved in the third party settings.
+    $form['third_party_settings']['#tree'] = TRUE;
+
+    /**
+     * use this syntax for save values in the third party settings
+     * $form['third_party_settings']['module_name']['field_name']
+     **/
+    $form['third_party_settings']['codimth_block_attributes']['classes'] = [
+        '#type' => 'textfield',
+        '#title' => t('CSS class(es)'),
+        '#description' => t('Customize the styling of this block by adding CSS classes.'),
+        '#default_value' => $block->getThirdPartySetting('codimth_block_attributes', 'classes'),
+    ];
+
+    $form['third_party_settings']['codimth_block_attributes']['id'] = [
+        '#type' => 'textfield',
+        '#title' => t('ID'),
+        '#description' => t('Customize the ID of this block.'),
+        '#default_value' => $block->getThirdPartySetting('codimth_block_attributes', 'id'),
+    ];
+
+    $form['third_party_settings']['codimth_block_attributes']['attributes'] = [
+        '#type' => 'textfield',
+        '#title' => t('Others Attributes'),
+        '#description' => t('Others Attributes like this format "attr|value,attr1|value1" '),
+        '#default_value' => $block->getThirdPartySetting('codimth_block_attributes', 'attributes'),
+    ];
+
+    $form['third_party_settings']['codimth_block_attributes']['wrapper_tag'] = [
+        '#type' => 'textfield',
+        '#title' => t('Wrapper Tag'),
+        '#description' => t('Wrapper Tag "div or section or ....." default is div  '),
+        '#default_value' => $block->getThirdPartySetting('codimth_block_attributes', 'wrapper_tag'),
+    ];
+
+}
+
+/**
+ * Implements hook_preprocess_HOOK().
+ */
+function codimth_block_attributes_preprocess_block(&$variables)
+{
+    $variables['wrapper_tag'] = "div";
+
+    // Blocks coming from page manager widget does not have id.
+    if (!empty($variables['elements']['#id'])) {
+        $block = Block::load($variables['elements']['#id']);
+        if ($block) {
+
+            if ($classes = $block->getThirdPartySetting('codimth_block_attributes', 'classes')) {
+                $classes_array = explode(' ', $classes);
+                foreach ($classes_array as $class) {
+                    $variables['attributes']['class'][] = Html::cleanCssIdentifier($class, []);
+                }
+            }
+
+            if ($id = $block->getThirdPartySetting('codimth_block_attributes', 'id')) {
+                $variables['attributes']['id'] = $id;
+            }
+
+            if ($attributes = $block->getThirdPartySetting('codimth_block_attributes', 'attributes')) {
+                $attributes_array = explode(',', $attributes);
+                foreach ($attributes_array as $attribute) {
+                    $attr = explode('|', $attribute);
+                    if (isset($attr[0]) && isset($attr[1])) {
+                        $variables['attributes'][$attr[0]] = $attr[1];
+                    }
+                }
+            }
+
+            if ($wrapper_tag = $block->getThirdPartySetting('codimth_block_attributes', 'wrapper_tag')) {
+                $variables['wrapper_tag'] = $wrapper_tag;
+            }
+
+
+        }
+    }
+}
+
+
+/**
+ * Implements hook_theme_registry_alter().
+ */
+function codimth_block_attributes_theme_registry_alter(&$theme_registry) {
+    $theme_registry['block']['path'] = drupal_get_path('module', 'codimth_block_attributes') . '/templates';
+}
